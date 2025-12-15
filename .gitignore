@@ -41,6 +41,9 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 .env.*.local
+# Но .env.example должен быть в git
+!.env.example
+!backend/.env.example
 
 # IDE
 .vscode/
@@ -67,4 +70,3 @@ backend/media/
 frontend/build/
 frontend/.pnp
 frontend/.pnp.js
-
