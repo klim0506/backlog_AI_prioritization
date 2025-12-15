@@ -1,0 +1,18 @@
+.layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 250px;
+  transition: margin-left 0.3s ease;
+  overflow-y: auto;
+  background-color: #f5f7fa;
+}
+
+.main-content.collapsed {
+  margin-left: 70px;
+}
+
