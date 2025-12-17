@@ -18,29 +18,21 @@ class ProjectEvaluation(models.Model):
         blank=True,
         verbose_name="Статус проекта"
     )
-    owner = models.ForeignKey(
+    product = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='owned_projects',
-        verbose_name="Владелец проекта"
+        related_name='product_projects',
+        verbose_name="Product"
     )
-    responsible = models.ForeignKey(
+    developer = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='responsible_projects',
-        verbose_name="Ответственный"
-    )
-    initiator = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='initiated_projects',
-        verbose_name="Инициатор"
+        related_name='developer_projects',
+        verbose_name="Разработчик"
     )
     
     # Три оси оценки
@@ -57,13 +49,7 @@ class ProjectEvaluation(models.Model):
         verbose_name="Экспертная оценка (X)"
     )
     
-    vector_sum = models.FloatField(null=True, blank=True, verbose_name="Векторная сумма")
-    
-    # Флаги для отслеживания LLM-генерации
-    economic_efficiency_llm_generated = models.BooleanField(default=False)
-    technical_complexity_llm_generated = models.BooleanField(default=False)
-    expert_rating_llm_generated = models.BooleanField(default=False)
-    
+    sum = models.FloatField(null=True, blank=True, verbose_name="Сумма")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -75,13 +61,12 @@ class ProjectEvaluation(models.Model):
     def __str__(self):
         return f"Оценка {self.project.project_number}"
     
-    def calculate_vector_sum(self):
-        """Вычисляет векторную сумму E + T + X"""
-        self.vector_sum = self.economic_efficiency + self.technical_complexity + self.expert_rating
-        return self.vector_sum
+    def calculate_sum(self):
+        """Вычисляет сумму E + T + X"""
+        self.sum = self.economic_efficiency + self.technical_complexity + self.expert_rating
+        return self.sum
     
     def save(self, *args, **kwargs):
-        # Всегда пересчитываем векторную сумму при сохранении
-        self.calculate_vector_sum()
+        self.calculate_sum()
         super().save(*args, **kwargs)
 

@@ -40,15 +40,31 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post(
         '/api/users/login/',
         { username, password },
-        { withCredentials: true }
+        { 
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
       );
-      setUser(response.data.user);
-      setIsAuthenticated(true);
-      return { success: true };
+      
+      if (response.data.user) {
+        setUser(response.data.user);
+        setIsAuthenticated(true);
+        // Проверяем авторизацию еще раз для уверенности
+        await checkAuth();
+        return { success: true };
+      } else {
+        return {
+          success: false,
+          error: 'Не удалось получить данные пользователя'
+        };
+      }
     } catch (error) {
+      console.error('Login error:', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Ошибка входа'
+        error: error.response?.data?.error || error.message || 'Ошибка входа'
       };
     }
   };

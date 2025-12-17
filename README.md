@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-# backlog_AI_prioritization
-Система приоритизации бэклога проектов с учётом различных экономических и проектных параметров
-=======
 # Система приоритизации бэклога проектов
 
 Веб-приложение для оценки, приоритизации и визуального анализа проектов на основе трёх ключевых параметров:
@@ -14,6 +10,7 @@
 - **Frontend**: React 18, React Router
 - **Backend**: Django 4.2, Django REST Framework
 - **База данных**: SQLite
+- **LLM**: DeepSeek API для генерации оценок
 - **Стили**: CSS (минималистичный дизайн в бело-голубо-синих цветах)
 
 ## Структура проекта
@@ -52,18 +49,30 @@ source venv/bin/activate  # На Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Выполните миграции:
+4. Создайте файл `.env` в директории `backend/`:
+```env
+SECRET_KEY=django-insecure-dev-key-change-in-production
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+
+DEEPSEEK_API_KEY=your-deepseek-api-key-here
+DEEPSEEK_API_URL=https://api.deepseek.com/v1/chat/completions
+DEEPSEEK_MODEL=deepseek-chat
+```
+
+5. Выполните миграции:
 ```bash
 python manage.py makemigrations
 python manage.py migrate
 ```
 
-5. Создайте суперпользователя (опционально):
+6. Создайте суперпользователя (опционально):
 ```bash
 python manage.py createsuperuser
 ```
 
-6. Запустите сервер:
+7. Запустите сервер:
 ```bash
 python manage.py runserver
 ```
@@ -108,7 +117,8 @@ Frontend будет доступен по адресу: http://localhost:3000
 3. **ProjectEvaluation** - Оценки проектов
    - project (Связь с проектом)
    - status (Статус)
-   - owner, responsible, initiator (Пользователи)
+   - product (PM)
+   - developer (Разработчик)
    - economic_efficiency (E)
    - technical_complexity (T)
    - expert_rating (X)
@@ -117,26 +127,28 @@ Frontend будет доступен по адресу: http://localhost:3000
 ## Страницы приложения
 
 1. **Авторизация** (`/login`) - Вход в систему
-2. **Все проекты** (`/projects`) - Список всех проектов
-3. **Таблица оценки** (`/evaluations`) - Редактируемая таблица оценок
-4. **Визуализация** (`/visualization`) - 3D и 2D визуализация результатов
+2. **Все проекты** (`/projects`) - Список всех проектов с возможностью добавления и редактирования
+3. **Таблица оценки** (`/evaluations`) - Редактируемая таблица оценок с сортировкой
+4. **Визуализация** (`/visualization`) - Визуализация результатов
 
 ## API Endpoints
 
 - `GET/POST /api/projects/project/` - Список/создание проектов
 - `GET/PUT/DELETE /api/projects/project/{id}/` - Детали проекта
+- `POST /api/projects/project/import_projects/` - Импорт проектов через LLM
 - `GET/POST /api/evaluations/evaluation/` - Список/создание оценок
 - `GET/PUT/DELETE /api/evaluations/evaluation/{id}/` - Детали оценки
+- `POST /api/evaluations/evaluation/{id}/generate_with_llm/` - Генерация оценки через LLM
+- `GET /api/projects/status/` - Список статусов проектов
+- `GET /api/users/list/` - Список пользователей
 - `POST /api/users/login/` - Авторизация
 - `POST /api/users/logout/` - Выход
 - `GET /api/users/current/` - Текущий пользователь
 
-## Следующие шаги
+## Особенности
 
-- Реализация функционала добавления/редактирования проектов
-- Интеграция с LLM для генерации оценок
-- Реализация 3D визуализации (Three.js или аналогичная библиотека)
-- Импорт проектов из CSV/Excel
-- Расширенная фильтрация и поиск
-
->>>>>>> 8b1c8d3 (Initial commit: структура проекта с Django backend и React frontend)
+- Автоматическое создание оценки при создании проекта
+- Автоматическое обновление приоритетов на основе векторной суммы
+- Генерация оценок через DeepSeek LLM
+- Импорт проектов из CSV/Excel с автоматической обработкой через LLM
+- Сортировка по всем столбцам в таблице оценок

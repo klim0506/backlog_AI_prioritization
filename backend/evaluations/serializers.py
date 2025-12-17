@@ -14,15 +14,14 @@ class UserSerializer(serializers.ModelSerializer):
 class ProjectEvaluationSerializer(serializers.ModelSerializer):
     project = ProjectSerializer(read_only=True)
     status = ProjectStatusSerializer(read_only=True)
-    owner = UserSerializer(read_only=True)
-    responsible = UserSerializer(read_only=True)
-    initiator = UserSerializer(read_only=True)
+    product = UserSerializer(read_only=True)
+    developer = UserSerializer(read_only=True)
     
     project_id = serializers.PrimaryKeyRelatedField(
         queryset=Project.objects.all(),
         source='project',
         write_only=True,
-        required=False
+        required=True
     )
     status_id = serializers.PrimaryKeyRelatedField(
         queryset=ProjectStatus.objects.all(),
@@ -31,23 +30,16 @@ class ProjectEvaluationSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
-    owner_id = serializers.PrimaryKeyRelatedField(
+    product_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
-        source='owner',
+        source='product',
         write_only=True,
         required=False,
         allow_null=True
     )
-    responsible_id = serializers.PrimaryKeyRelatedField(
+    developer_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
-        source='responsible',
-        write_only=True,
-        required=False,
-        allow_null=True
-    )
-    initiator_id = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(),
-        source='initiator',
+        source='developer',
         write_only=True,
         required=False,
         allow_null=True
@@ -57,26 +49,28 @@ class ProjectEvaluationSerializer(serializers.ModelSerializer):
         model = ProjectEvaluation
         fields = [
             'id', 'project', 'project_id', 'status', 'status_id',
-            'owner', 'owner_id', 'responsible', 'responsible_id',
-            'initiator', 'initiator_id',
+            'product', 'product_id', 'developer', 'developer_id',
             'economic_efficiency', 'technical_complexity', 'expert_rating',
-            'vector_sum',
-            'economic_efficiency_llm_generated',
-            'technical_complexity_llm_generated',
-            'expert_rating_llm_generated',
-            'created_at', 'updated_at'
+            'sum', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['vector_sum', 'created_at', 'updated_at']
+        read_only_fields = ['sum', 'created_at', 'updated_at']
     
     def update(self, instance, validated_data):
         instance = super().update(instance, validated_data)
-        instance.calculate_vector_sum()
+        instance.calculate_sum()
         instance.save()
         return instance
     
     def create(self, validated_data):
+        project = validated_data.get('project')
+        if not project:
+            raise serializers.ValidationError({'project_id': 'Проект обязателен для создания оценки'})
+        
+        if ProjectEvaluation.objects.filter(project=project).exists():
+            raise serializers.ValidationError({'project_id': 'Для этого проекта уже существует оценка'})
+        
         instance = super().create(validated_data)
-        instance.calculate_vector_sum()
+        instance.calculate_sum()
         instance.save()
         return instance
 

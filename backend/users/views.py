@@ -5,6 +5,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from rest_framework import serializers
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -30,8 +33,8 @@ class LoginView(views.APIView):
         if user is not None:
             if user.is_active:
                 login(request, user)
-                # Сохраняем сессию явно
                 request.session.save()
+                logger.info(f"LOGIN User {username}")
                 return Response({
                     'user': UserSerializer(user).data,
                     'message': 'Успешный вход'
@@ -51,16 +54,24 @@ class LoginView(views.APIView):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
-    """Выход пользователя"""
+    username = request.user.username
     logout(request)
+    logger.info(f"LOGOUT User {username}")
     return Response({'message': 'Успешный выход'})
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def current_user(request):
-    """Получение текущего пользователя"""
     return Response({
         'user': UserSerializer(request.user).data
     })
 
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def users_list(request):
+    users = User.objects.filter(is_active=True).order_by('username')
+    return Response({
+        'users': [UserSerializer(user).data for user in users]
+    })

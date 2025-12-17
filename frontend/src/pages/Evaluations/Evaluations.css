@@ -7,6 +7,44 @@
   margin-bottom: 30px;
 }
 
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.sort-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sort-btn {
+  padding: 8px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #64748b;
+  transition: all 0.2s;
+}
+
+.sort-btn:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.sort-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
 .page-title {
   font-size: 32px;
   font-weight: 600;
@@ -23,41 +61,300 @@
 .page-content {
   background: white;
   border-radius: 12px;
-  padding: 40px;
+  padding: 30px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.placeholder-content {
+.empty-state {
   text-align: center;
+  padding: 60px 20px;
   color: #64748b;
 }
 
-.placeholder-icon {
+.empty-icon {
   font-size: 64px;
   margin-bottom: 20px;
 }
 
-.placeholder-content h2 {
+.empty-state h3 {
   font-size: 24px;
   color: #1e3a8a;
-  margin-bottom: 20px;
-}
-
-.placeholder-content p {
-  font-size: 16px;
-  margin-bottom: 20px;
-  line-height: 1.6;
-}
-
-.placeholder-content ul {
-  text-align: left;
-  max-width: 600px;
-  margin: 0 auto;
-  list-style-position: inside;
-}
-
-.placeholder-content li {
   margin-bottom: 10px;
-  line-height: 1.6;
 }
 
+.empty-state p {
+  font-size: 16px;
+  white-space: normal;
+  word-wrap: break-word;
+  max-width: 500px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.evaluations-table-container {
+  overflow-x: auto;
+  margin-bottom: 30px;
+}
+
+.evaluations-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.evaluations-table thead {
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.evaluations-table th {
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: #1e3a8a;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+  position: relative;
+}
+
+.sortable-header:hover {
+  background-color: #e2e8f0;
+}
+
+.sort-info {
+  font-size: 13px;
+  color: #64748b;
+  font-style: italic;
+}
+
+.evaluations-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+}
+
+.evaluations-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.evaluations-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.cell-project-number {
+  font-weight: 600;
+  color: #1e3a8a;
+  min-width: 100px;
+}
+
+.cell-priority {
+  text-align: center;
+  min-width: 80px;
+  color: #64748b;
+}
+
+.cell-project-name {
+  min-width: 200px;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.cell-status,
+.cell-pm,
+.cell-developer {
+  min-width: 150px;
+}
+
+.cell-select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 13px;
+  background: white;
+  color: #1e293b;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.cell-select:hover:not(:disabled) {
+  border-color: #3b82f6;
+}
+
+.cell-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.cell-select:disabled {
+  background: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Цветные статусы */
+.status-select.status-бэклог,
+.status-select[class*="status-бэклог"] {
+  background: #fef3c7 !important;
+  border-color: #fbbf24 !important;
+  color: #92400e !important;
+}
+
+.status-select.status-разработка,
+.status-select[class*="status-разработка"] {
+  background: #dbeafe !important;
+  border-color: #3b82f6 !important;
+  color: #1e40af !important;
+}
+
+.status-select.status-тестирование,
+.status-select[class*="status-тестирование"] {
+  background: #fce7f3 !important;
+  border-color: #ec4899 !important;
+  color: #9f1239 !important;
+}
+
+.status-select.status-использование,
+.status-select[class*="status-использование"] {
+  background: #d1fae5 !important;
+  border-color: #10b981 !important;
+  color: #065f46 !important;
+}
+
+.status-select.status-закрыт,
+.status-select[class*="status-закрыт"] {
+  background: #e5e7eb !important;
+  border-color: #6b7280 !important;
+  color: #374151 !important;
+}
+
+.status-select.status-none {
+  background: white;
+}
+
+.cell-evaluation {
+  min-width: 80px;
+  text-align: center;
+}
+
+.cell-llm-generate {
+  text-align: center;
+  min-width: 50px;
+}
+
+.evaluation-cell-compact {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.evaluation-input-compact {
+  flex: 1;
+  padding: 4px 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 12px;
+  text-align: center;
+  min-width: 40px;
+  max-width: 50px;
+  transition: border-color 0.2s;
+}
+
+.evaluation-input-compact:hover:not(:disabled) {
+  border-color: #3b82f6;
+}
+
+.evaluation-input-compact:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.evaluation-input-compact:disabled {
+  background: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.llm-btn-compact {
+  padding: 2px 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+  min-width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.llm-btn-compact:hover:not(:disabled) {
+  background: #f0f9ff;
+  border-color: #3b82f6;
+  transform: scale(1.05);
+}
+
+.llm-btn-compact:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.llm-btn-compact:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cell-vector-sum {
+  text-align: center;
+  font-weight: 600;
+  color: #1e3a8a;
+  min-width: 100px;
+  font-size: 14px;
+}
+
+
+.loading {
+  text-align: center;
+  padding: 60px;
+  font-size: 18px;
+  color: #64748b;
+}
+
+/* Адаптивность для маленьких экранов */
+@media (max-width: 1200px) {
+  .evaluations-table-container {
+    overflow-x: scroll;
+  }
+  
+  .evaluations-table {
+    min-width: 1200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 20px;
+  }
+  
+  .page-content {
+    padding: 20px;
+  }
+  
+  .evaluations-table {
+    font-size: 12px;
+  }
+  
+  .evaluations-table th,
+  .evaluations-table td {
+    padding: 8px 6px;
+  }
+}
