@@ -9,7 +9,8 @@ const Evaluations = () => {
   const [users, setUsers] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState(new Set());
+  const [generating, setGenerating] = useState(new Set());
   const [sortBy, setSortBy] = useState('priority');
   const [sortOrder, setSortOrder] = useState('asc');
 
@@ -135,8 +136,9 @@ const Evaluations = () => {
       e.id === evaluationId ? updatedEvaluation : e
     ));
 
+    setSaving(prev => new Set(prev).add(evaluationId));
+
     try {
-      setSaving(true);
       await axios.put(`/api/evaluations/evaluation/${evaluationId}/`, payload, {
         withCredentials: true
       });
@@ -147,13 +149,22 @@ const Evaluations = () => {
       alert(error.response?.data?.error || 'Ошибка при сохранении изменений');
       await fetchEvaluations();
     } finally {
-      setSaving(false);
+      setSaving(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(evaluationId);
+        return newSet;
+      });
     }
   };
 
   const handleLLMGenerate = async (evaluationId) => {
+    if (generating.has(evaluationId)) {
+      return;
+    }
+
+    setGenerating(prev => new Set(prev).add(evaluationId));
+
     try {
-      setSaving(true);
       const response = await axios.post(
         `/api/evaluations/evaluation/${evaluationId}/generate_with_llm/`,
         {},
@@ -171,7 +182,11 @@ const Evaluations = () => {
       alert(error.response?.data?.error || 'Ошибка при генерации оценок через LLM');
       await fetchEvaluations();
     } finally {
-      setSaving(false);
+      setGenerating(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(evaluationId);
+        return newSet;
+      });
     }
   };
 
@@ -387,7 +402,7 @@ const Evaluations = () => {
                       <select
                         value={evaluation.status?.id || ''}
                         onChange={(e) => handleCellChange(evaluation.id, 'status_id', e.target.value || null)}
-                        disabled={saving}
+                        disabled={saving.has(evaluation.id) || generating.has(evaluation.id)}
                         className={`cell-select status-select status-${evaluation.status?.name?.toLowerCase() || 'none'}`}
                       >
                         <option value="">Не выбран</option>
@@ -410,7 +425,7 @@ const Evaluations = () => {
                         step="0.1"
                         value={evaluation.economic_efficiency || 0}
                         onChange={(e) => handleCellChange(evaluation.id, 'economic_efficiency', parseFloat(e.target.value) || 0)}
-                        disabled={saving}
+                        disabled={saving.has(evaluation.id) || generating.has(evaluation.id)}
                         className="evaluation-input-compact"
                       />
                     </td>
@@ -422,7 +437,7 @@ const Evaluations = () => {
                         step="0.1"
                         value={evaluation.technical_complexity || 0}
                         onChange={(e) => handleCellChange(evaluation.id, 'technical_complexity', parseFloat(e.target.value) || 0)}
-                        disabled={saving}
+                        disabled={saving.has(evaluation.id) || generating.has(evaluation.id)}
                         className="evaluation-input-compact"
                       />
                     </td>
@@ -434,7 +449,7 @@ const Evaluations = () => {
                         step="0.1"
                         value={evaluation.expert_rating || 0}
                         onChange={(e) => handleCellChange(evaluation.id, 'expert_rating', parseFloat(e.target.value) || 0)}
-                        disabled={saving}
+                        disabled={saving.has(evaluation.id) || generating.has(evaluation.id)}
                         className="evaluation-input-compact"
                       />
                     </td>
@@ -442,7 +457,7 @@ const Evaluations = () => {
                       <button
                         className="llm-btn-compact"
                         onClick={() => handleLLMGenerate(evaluation.id)}
-                        disabled={saving}
+                        disabled={generating.has(evaluation.id)}
                         title="Сгенерировать все оценки (E, T, X) через LLM"
                       >
                         🤖
@@ -455,7 +470,7 @@ const Evaluations = () => {
                       <select
                         value={evaluation.product?.id || ''}
                         onChange={(e) => handleCellChange(evaluation.id, 'product_id', e.target.value || null)}
-                        disabled={saving}
+                        disabled={saving.has(evaluation.id) || generating.has(evaluation.id)}
                         className="cell-select"
                       >
                         <option value="">Не выбран</option>
@@ -470,7 +485,7 @@ const Evaluations = () => {
                       <select
                         value={evaluation.developer?.id || ''}
                         onChange={(e) => handleCellChange(evaluation.id, 'developer_id', e.target.value || null)}
-                        disabled={saving}
+                        disabled={saving.has(evaluation.id) || generating.has(evaluation.id)}
                         className="cell-select"
                       >
                         <option value="">Не выбран</option>

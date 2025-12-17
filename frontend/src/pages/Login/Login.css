@@ -139,3 +139,32 @@
   -moz-appearance: textfield;
 }
 
+.switch-mode {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.switch-button {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0;
+  margin-left: 4px;
+  text-decoration: underline;
+  transition: opacity 0.2s;
+}
+
+.switch-button:hover:not(:disabled) {
+  opacity: 0.8;
+}
+
+.switch-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+

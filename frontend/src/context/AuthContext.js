@@ -69,6 +69,40 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const register = async (username, password) => {
+    try {
+      const response = await axios.post(
+        '/api/users/register/',
+        { username, password },
+        { 
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+      
+      if (response.data.user) {
+        setUser(response.data.user);
+        setIsAuthenticated(true);
+        // Проверяем авторизацию еще раз для уверенности
+        await checkAuth();
+        return { success: true };
+      } else {
+        return {
+          success: false,
+          error: 'Не удалось получить данные пользователя'
+        };
+      }
+    } catch (error) {
+      console.error('Register error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message || 'Ошибка регистрации'
+      };
+    }
+  };
+
   const logout = async () => {
     try {
       await axios.post('/api/users/logout/', {}, { withCredentials: true });
@@ -84,6 +118,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     user,
     login,
+    register,
     logout,
     loading
   };

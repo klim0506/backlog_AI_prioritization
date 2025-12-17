@@ -56,8 +56,11 @@ const ProjectPoint = ({ evaluation, position, onHover, onLeave, onClick, isSelec
   );
 };
 
-// Компонент 2D плоскости для проекции
-const ProjectionPlane = ({ evaluations, plane, onPointHover, onPointLeave, onPointClick, selectedProject }) => {
+// Компонент 2D графика для проекций
+const Projection2D = ({ evaluations, plane, onPointHover, onPointLeave, onPointClick, selectedProject }) => {
+  const canvasRef = useRef(null);
+  const [hoveredPoint, setHoveredPoint] = useState(null);
+
   const getAxes = () => {
     switch(plane) {
       case 'ET':
@@ -72,75 +75,212 @@ const ProjectionPlane = ({ evaluations, plane, onPointHover, onPointLeave, onPoi
   };
 
   const axes = getAxes();
+  const filteredEvaluations = evaluations.filter(evaluation => evaluation.project && (evaluation.sum || 0) > 0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    const padding = 60;
+    const graphWidth = width - padding * 2;
+    const graphHeight = height - padding * 2;
+    const maxValue = 10;
+
+    // Очистка
+    ctx.clearRect(0, 0, width, height);
+
+    // Фон
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    // Сетка
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 10; i++) {
+      const x = padding + (i / maxValue) * graphWidth;
+      const y = padding + (i / maxValue) * graphHeight;
+      
+      // Вертикальные линии
+      ctx.beginPath();
+      ctx.moveTo(x, padding);
+      ctx.lineTo(x, height - padding);
+      ctx.stroke();
+      
+      // Горизонтальные линии
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(width - padding, y);
+      ctx.stroke();
+    }
+
+    // Оси
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 2;
+    
+    // Ось X
+    ctx.beginPath();
+    ctx.moveTo(padding, height - padding);
+    ctx.lineTo(width - padding, height - padding);
+    ctx.stroke();
+    
+    // Ось Y
+    ctx.beginPath();
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, height - padding);
+    ctx.stroke();
+
+    // Подписи осей
+    ctx.fillStyle = '#ef4444';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(axes.labelX, width - padding, height - padding + 30);
+    
+    ctx.fillStyle = '#22c55e';
+    ctx.textAlign = 'left';
+    ctx.save();
+    ctx.translate(padding - 30, height / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText(axes.labelY, 0, 0);
+    ctx.restore();
+
+    // Подписи значений на осях
+    ctx.fillStyle = '#64748b';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    for (let i = 0; i <= 10; i += 2) {
+      const x = padding + (i / maxValue) * graphWidth;
+      ctx.fillText(i.toString(), x, height - padding + 20);
+    }
+    
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 10; i += 2) {
+      const y = height - padding - (i / maxValue) * graphHeight;
+      ctx.fillText(i.toString(), padding - 10, y + 4);
+    }
+
+    // Точки
+    filteredEvaluations.forEach((evaluation) => {
+      const xValue = evaluation[axes.x] || 0;
+      const yValue = evaluation[axes.y] || 0;
+      
+      const x = padding + (xValue / maxValue) * graphWidth;
+      const y = height - padding - (yValue / maxValue) * graphHeight;
+      
+      const isSelected = selectedProject?.id === evaluation.id;
+      const isHovered = hoveredPoint?.id === evaluation.id;
+      const statusColor = getStatusColor(evaluation.status?.name);
+      const color = isSelected ? '#ef4444' : isHovered ? '#3b82f6' : statusColor;
+      const radius = isSelected || isHovered ? 6 : 4;
+
+      // Круг
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+  }, [filteredEvaluations, axes, selectedProject, hoveredPoint]);
+
+  const handleMouseMove = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    
+    const padding = 60;
+    const graphWidth = canvas.width - padding * 2;
+    const graphHeight = canvas.height - padding * 2;
+    const maxValue = 10;
+
+    let closestPoint = null;
+    let minDistance = Infinity;
+
+    filteredEvaluations.forEach((evaluation) => {
+      const xValue = evaluation[axes.x] || 0;
+      const yValue = evaluation[axes.y] || 0;
+      
+      const pointX = padding + (xValue / maxValue) * graphWidth;
+      const pointY = canvas.height - padding - (yValue / maxValue) * graphHeight;
+      
+      const distance = Math.sqrt((x - pointX) ** 2 + (y - pointY) ** 2);
+      
+      if (distance < 20 && distance < minDistance) {
+        minDistance = distance;
+        closestPoint = evaluation;
+      }
+    });
+
+    if (closestPoint) {
+      setHoveredPoint(closestPoint);
+      onPointHover(closestPoint);
+    } else {
+      setHoveredPoint(null);
+      onPointLeave();
+    }
+  };
+
+  const handleClick = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    
+    const padding = 60;
+    const graphWidth = canvas.width - padding * 2;
+    const graphHeight = canvas.height - padding * 2;
+    const maxValue = 10;
+
+    let closestPoint = null;
+    let minDistance = Infinity;
+
+    filteredEvaluations.forEach((evaluation) => {
+      const xValue = evaluation[axes.x] || 0;
+      const yValue = evaluation[axes.y] || 0;
+      
+      const pointX = padding + (xValue / maxValue) * graphWidth;
+      const pointY = canvas.height - padding - (yValue / maxValue) * graphHeight;
+      
+      const distance = Math.sqrt((x - pointX) ** 2 + (y - pointY) ** 2);
+      
+      if (distance < 20 && distance < minDistance) {
+        minDistance = distance;
+        closestPoint = evaluation;
+      }
+    });
+
+    if (closestPoint) {
+      onPointClick(closestPoint);
+    }
+  };
 
   return (
-    <>
-      <ambientLight intensity={0.8} />
-      <directionalLight position={[0, 0, 5]} intensity={0.5} />
-      
-      <Grid args={[10, 10]} position={[2.5, 2.5, 0]} cellColor="#cbd5e1" sectionColor="#94a3b8" />
-      
-      <mesh position={[2.5, 0, 0.01]}>
-        <boxGeometry args={[5, 0.1, 0.1]} />
-        <meshStandardMaterial color="#ef4444" />
-      </mesh>
-      <mesh position={[0, 2.5, 0.01]} rotation={[0, 0, Math.PI / 2]}>
-        <boxGeometry args={[5, 0.1, 0.1]} />
-        <meshStandardMaterial color="#22c55e" />
-      </mesh>
-      
-      <Text position={[7, -0.5, 0.1]} fontSize={1.2} color="#ef4444">
-        {axes.labelX}
-      </Text>
-      <Text position={[-0.5, 7, 0.1]} fontSize={1.2} color="#22c55e">
-        {axes.labelY}
-      </Text>
-      
-      {evaluations
-        .filter(evaluation => evaluation.project && (evaluation.sum || 0) > 0)
-        .map((evaluation) => {
-          const scale = 5; // Масштаб для значений 0-10
-          const x = (evaluation[axes.x] || 0) * scale / 10;
-          const y = (evaluation[axes.y] || 0) * scale / 10;
-          const z = 0.1;
-          
-          const isSelected = selectedProject?.id === evaluation.id;
-          const statusColor = getStatusColor(evaluation.status?.name);
-          const color = isSelected ? '#ef4444' : statusColor;
-          
-          return (
-            <mesh
-              key={evaluation.id}
-              position={[x, y, z]}
-              onPointerOver={(e) => {
-                e.stopPropagation();
-                onPointHover(evaluation);
-              }}
-              onPointerOut={() => onPointLeave()}
-              onClick={(e) => {
-                e.stopPropagation();
-                onPointClick(evaluation);
-              }}
-              scale={isSelected ? 1.5 : 1}
-            >
-              <circleGeometry args={[0.08, 16]} />
-              <meshStandardMaterial 
-                color={color} 
-                emissive={color} 
-                emissiveIntensity={0.3}
-              />
-            </mesh>
-          );
-        })}
-      
-      <OrbitControls 
-        enableDamping 
-        dampingFactor={0.05}
-        enableRotate={false}
-        minDistance={15}
-        maxDistance={30}
-      />
-    </>
+    <canvas
+      ref={canvasRef}
+      width={800}
+      height={600}
+      onMouseMove={handleMouseMove}
+      onClick={handleClick}
+      onMouseLeave={() => {
+        setHoveredPoint(null);
+        onPointLeave();
+      }}
+      style={{ width: '100%', height: '100%', cursor: hoveredPoint ? 'pointer' : 'default' }}
+    />
   );
 };
 
@@ -152,30 +292,45 @@ const Scene3D = ({ evaluations, onHover, onLeave, onClick, selectedProject }) =>
       <directionalLight position={[10, 10, 5]} intensity={1} />
       <pointLight position={[-10, -10, -5]} intensity={0.5} />
       
-      {/* Сетка - от точки (0,0,0) до точки (10,10,0) */}
-      <Grid args={[10, 10]} position={[5, 5, 0]} cellColor="#cbd5e1" sectionColor="#94a3b8" />
+      {/* Основная плоскость - квадрат от (0,0,0) до (10,0,10) в плоскости EX (XZ) */}
+      <mesh position={[5, 0, 5]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[10, 10]} />
+        <meshStandardMaterial color="#f1f5f9" opacity={0.3} transparent />
+      </mesh>
       
-      {/* Оси координат - E (X) - только положительное направление */}
+      {/* Зеленый прозрачный куб для области E > 5, T > 5, X > 5 */}
+      <mesh position={[7.5, 7.5, 7.5]}>
+        <boxGeometry args={[5, 5, 5]} />
+        <meshStandardMaterial color="#10b981" opacity={0.3} transparent />
+      </mesh>
+      
+      {/* Красный полупрозрачный куб для области E < 5, T < 5, X < 5 */}
+      <mesh position={[2.5, 2.5, 2.5]}>
+        <boxGeometry args={[5, 5, 5]} />
+        <meshStandardMaterial color="#ef4444" opacity={0.3} transparent />
+      </mesh>
+      
+      {/* Оси координат - E (X) - от 0 до 10 */}
       <primitive 
-        object={new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0), 5, 0xff0000)} 
+        object={new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0), 10, 0xff0000)} 
       />
-      {/* Оси координат - T (Y) - только положительное направление */}
+      {/* Оси координат - T (Y) - от 0 до 10 */}
       <primitive 
-        object={new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 5, 0x00ff00)} 
+        object={new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 10, 0x00ff00)} 
       />
       {/* Оси координат - X (Z) - только положительное направление */}
       <primitive 
-        object={new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0), 5, 0x0000ff)} 
+        object={new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0), 10, 0x0000ff)} 
       />
       
       {/* Подписи осей */}
-      <Text position={[5, 0, 0]} fontSize={1} color="#ef4444">
+      <Text position={[10, 0, 0]} fontSize={1} color="#ef4444">
         E
       </Text>
-      <Text position={[0, 5, 0]} fontSize={1} color="#22c55e">
+      <Text position={[0, 10, 0]} fontSize={1} color="#22c55e">
         T
       </Text>
-      <Text position={[0, 0, 5]} fontSize={1} color="#3b82f6">
+      <Text position={[0, 0, 10]} fontSize={1} color="#3b82f6">
         X
       </Text>
       
@@ -183,10 +338,10 @@ const Scene3D = ({ evaluations, onHover, onLeave, onClick, selectedProject }) =>
       {evaluations
         .filter(evaluation => evaluation.project && (evaluation.sum || 0) > 0)
         .map((evaluation) => {
-          const scale = 5; // Масштаб для значений 0-10
-          const x = (evaluation.economic_efficiency || 0) * scale / 10;
-          const y = (evaluation.technical_complexity || 0) * scale / 10;
-          const z = (evaluation.expert_rating || 0) * scale / 10;
+          // Масштаб для значений 0-10: прямое соответствие координатам
+          const x = evaluation.economic_efficiency || 0;
+          const y = evaluation.technical_complexity || 0;
+          const z = evaluation.expert_rating || 0;
           
           const isSelected = selectedProject?.id === evaluation.id;
           const statusColor = getStatusColor(evaluation.status?.name);
@@ -326,7 +481,7 @@ const Visualization = () => {
       <div className="visualization-wrapper">
         <div className="canvas-container">
           {viewMode === '3d' ? (
-            <Canvas camera={{ position: [10, 10, 10], fov: 50 }}>
+            <Canvas camera={{ position: [15, 15, 15], fov: 50 }}>
               <Scene3D
                 evaluations={evaluations}
                 onHover={handleHover}
@@ -336,28 +491,14 @@ const Visualization = () => {
               />
             </Canvas>
           ) : (
-            <Canvas 
-              orthographic
-              camera={{ 
-                position: [2.5, 2.5, 15], 
-                zoom: 1,
-                left: -2.5,
-                right: 7.5,
-                top: 7.5,
-                bottom: -2.5,
-                near: 0.1,
-                far: 50
-              }}
-            >
-              <ProjectionPlane
-                evaluations={evaluations}
-                plane={viewMode}
-                onPointHover={handleHover}
-                onPointLeave={handleLeave}
-                onPointClick={handleClick}
-                selectedProject={selectedProject}
-              />
-            </Canvas>
+            <Projection2D
+              evaluations={evaluations}
+              plane={viewMode}
+              onPointHover={handleHover}
+              onPointLeave={handleLeave}
+              onPointClick={handleClick}
+              selectedProject={selectedProject}
+            />
           )}
         </div>
 

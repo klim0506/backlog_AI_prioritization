@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import './Login.css';
 
 const Login = () => {
+  const [isRegister, setIsRegister] = useState(false);
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState(['', '', '', '']);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   const navigate = useNavigate();
   const pinInputs = [useRef(null), useRef(null), useRef(null), useRef(null)];
 
@@ -58,7 +59,9 @@ const Login = () => {
     setLoading(true);
     const pinString = pin.join('');
 
-    const result = await login(username, pinString);
+    const result = isRegister 
+      ? await register(username, pinString)
+      : await login(username, pinString);
     
     if (result.success) {
       navigate('/projects');
@@ -72,6 +75,13 @@ const Login = () => {
     setLoading(false);
   };
 
+  const switchMode = () => {
+    setIsRegister(!isRegister);
+    setError('');
+    setUsername('');
+    setPin(['', '', '', '']);
+  };
+
   useEffect(() => {
     // Фокус на первое поле при загрузке
     pinInputs[0].current?.focus();
@@ -82,7 +92,9 @@ const Login = () => {
     <div className="login-container">
       <div className="login-card">
         <h1 className="login-title">Приоритизация проектов</h1>
-        <p className="login-subtitle">Войдите в систему</p>
+        <p className="login-subtitle">
+          {isRegister ? 'Создайте аккаунт' : 'Войдите в систему'}
+        </p>
         
         <form onSubmit={handleSubmit} className="login-form">
           {error && <div className="error-message">{error}</div>}
@@ -124,8 +136,25 @@ const Login = () => {
           </div>
           
           <button type="submit" className="login-button" disabled={loading}>
-            {loading ? 'Вход...' : 'Войти'}
+            {loading 
+              ? (isRegister ? 'Регистрация...' : 'Вход...') 
+              : (isRegister ? 'Зарегистрироваться' : 'Войти')
+            }
           </button>
+
+          <div className="switch-mode">
+            <span>
+              {isRegister ? 'Уже есть аккаунт? ' : 'Нет аккаунта? '}
+            </span>
+            <button
+              type="button"
+              className="switch-button"
+              onClick={switchMode}
+              disabled={loading}
+            >
+              {isRegister ? 'Войти' : 'Зарегистрироваться'}
+            </button>
+          </div>
         </form>
       </div>
     </div>

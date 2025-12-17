@@ -75,3 +75,47 @@ def users_list(request):
     return Response({
         'users': [UserSerializer(user).data for user in users]
     })
+
+
+class RegisterView(views.APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        
+        if not username or not password:
+            return Response(
+                {'error': 'Необходимо указать username и password'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Проверяем, существует ли пользователь
+        if User.objects.filter(username=username).exists():
+            return Response(
+                {'error': 'Пользователь с таким именем уже существует'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Создаем нового пользователя
+        try:
+            user = User.objects.create_user(
+                username=username,
+                password=password
+            )
+            logger.info(f"REGISTER User {username}")
+            
+            # Автоматически логиним пользователя после регистрации
+            login(request, user)
+            request.session.save()
+            
+            return Response({
+                'user': UserSerializer(user).data,
+                'message': 'Регистрация успешна'
+            }, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            logger.error(f"REGISTER Error: {str(e)}")
+            return Response(
+                {'error': f'Ошибка при создании пользователя: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
